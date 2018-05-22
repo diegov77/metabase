@@ -74,6 +74,29 @@ const SearchInput = styled.input`
 `;
 
 class SearchBar extends React.Component {
+  state = {
+    active: false,
+    searchText: "",
+  };
+
+  componentWillMount() {
+    this._updateSearchTextFromUrl(this.props);
+  }
+  componentWillReceiveProps(nextProps) {
+    if (this.props.location.pathname !== nextProps.location.pathname) {
+      this._updateSearchTextFromUrl(nextProps);
+    }
+  }
+  _updateSearchTextFromUrl(props) {
+    const components = props.location.pathname.split("/");
+    console.log(components);
+    if (components[components.length - 1] === "search") {
+      this.setState({ searchText: props.location.query.q });
+    } else {
+      this.setState({ searchText: "" });
+    }
+  }
+
   render() {
     return (
       <SearchWrapper w={2 / 3}>
@@ -81,13 +104,15 @@ class SearchBar extends React.Component {
         <SearchInput
           w={1}
           p={2}
+          value={this.state.searchText}
           placeholder="Search for anything..."
           onClick={() => this.setState({ active: true })}
+          onChange={e => this.setState({ searchText: e.target.value })}
           onKeyPress={e => {
             if (e.key === "Enter") {
               this.props.onChangeLocation({
                 pathname: "search",
-                query: { q: e.target.value },
+                query: { q: this.state.searchText },
               });
             }
           }}
@@ -207,7 +232,10 @@ export default class Navbar extends Component {
             <LogoIcon dark />
           </Link>
         </Box>
-        <SearchBar onChangeLocation={this.props.onChangeLocation} />
+        <SearchBar
+          location={this.props.location}
+          onChangeLocation={this.props.onChangeLocation}
+        />
         <Flex ml="auto" align="center">
           <PopoverWithTrigger
             ref={e => (this._newPopover = e)}
