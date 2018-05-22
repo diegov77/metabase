@@ -1,6 +1,6 @@
 import React from "react";
 
-import { Flex, Truncate } from "rebass";
+import { Flex, Box, Truncate } from "rebass";
 import Icon from "metabase/components/Icon";
 
 import { normal } from "metabase/lib/colors";
@@ -19,15 +19,28 @@ const IconWrapper = Flex.extend`
   border-radius: 6px;
 `;
 
-const EntityItem = ({ name, iconName, iconColor }) => {
+const EntityItem = ({ name, iconName, iconColor, item, onPin }) => {
   return (
-    <EntityItemWrapper py={2} px={2}>
+    <EntityItemWrapper py={2} px={2} className="hover-parent hover--visibility">
       <IconWrapper p={1} mr={1} align="center" justify="center">
         <Icon name={iconName} color={iconColor} />
       </IconWrapper>
       <h3>
         <Truncate>{name}</Truncate>
       </h3>
+
+      {onPin && (
+        <Box
+          className="hover-child"
+          ml="auto"
+          onClick={e => {
+            e.preventDefault();
+            onPin(item);
+          }}
+        >
+          <Icon name="star" />
+        </Box>
+      )}
     </EntityItemWrapper>
   );
 };
