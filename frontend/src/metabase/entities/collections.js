@@ -2,12 +2,14 @@
 
 import { createEntity } from "metabase/lib/entities";
 import { normal, getRandomColor } from "metabase/lib/colors";
+import { CollectionSchema } from "metabase/schema";
 
 import { t } from "c-3po";
 
 const Collections = createEntity({
   name: "collections",
   path: "/api/collection",
+  schema: CollectionSchema,
 
   objectActions: {
     setArchived: ({ id }, archived) =>

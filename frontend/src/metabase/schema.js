@@ -40,3 +40,9 @@ SegmentSchema.define({
 MetricSchema.define({
   table: TableSchema,
 });
+
+CollectionSchema.define({
+  cards: [QuestionSchema],
+  dashboards: [DashboardSchema],
+  pulses: [PulseSchema],
+});
