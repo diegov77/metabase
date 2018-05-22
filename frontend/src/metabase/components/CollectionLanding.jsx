@@ -5,7 +5,8 @@ import { connect } from "react-redux";
 import { withRouter } from "react-router";
 import { withBackground } from "metabase/hoc/Background";
 
-import { CardApi, DashboardApi } from "metabase/services";
+import Question from "metabase/entities/questions";
+import Dashboard from "metabase/entities/dashboards";
 
 import * as Urls from "metabase/lib/urls";
 import { normal } from "metabase/lib/colors";
@@ -30,6 +31,11 @@ const mapStateToProps = (state, props) => ({
       entityId: props.params.collectionId,
     }) || {},
 });
+
+const mapDispatchToProps = {
+  updateQuestion: Question.actions.update,
+  updateDashboard: Dashboard.actions.update,
+};
 
 const CollectionCard = Card.extend`
   border-color: #dce1e4;
@@ -81,6 +87,7 @@ const CollectionList = () => {
 };
 
 @withRouter
+@connect(() => ({}), mapDispatchToProps)
 class DefaultLanding extends React.Component {
   state = {
     reload: false,
@@ -113,25 +120,27 @@ class DefaultLanding extends React.Component {
     setTimeout(() => this.setState({ relaod: false }), 2000);
   }
   async _pinItem({ id, type, collection_position }) {
+    const { updateQuestion, updateDashboard } = this.props;
     switch (type) {
       case "card":
         // hack in 1 as the collection position just to be able to get "pins"
-        await CardApi.update({ id, collection_position: 1 });
+        await updateQuestion({ id, collection_position: 1 });
         break;
       case "dashboard":
-        await DashboardApi.update({ id, collection_position: 1 });
+        await updateDashboard({ id, collection_position: 1 });
         break;
     }
     this._reload();
   }
 
   async _unPinItem({ id, type, collection_position }) {
+    const { updateQuestion, updateDashboard } = this.props;
     switch (type) {
       case "card":
-        await CardApi.update({ id, collection_position: null });
+        await updateQuestion({ id, collection_position: null });
         break;
       case "dashboard":
-        await DashboardApi.update({ id, collection_position: null });
+        await updateDashboard({ id, collection_position: null });
         break;
     }
     this._reload();
@@ -152,10 +161,7 @@ class DefaultLanding extends React.Component {
         )}
         <Box w={2 / 3}>
           <Box>
-            <CollectionItemsLoader
-              collectionId={collectionId || "root"}
-              reload={this.state.reload}
-            >
+            <CollectionItemsLoader collectionId={collectionId || "root"} reload>
               {({ allItems, pulses, cards, dashboards, empty }) => {
                 let items = allItems;
 
