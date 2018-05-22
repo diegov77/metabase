@@ -3,6 +3,7 @@
 import React from "react";
 import { connect } from "react-redux";
 import _ from "underscore";
+import { createSelector } from "reselect";
 
 import entityType from "./EntityType";
 import LoadingAndErrorWrapper from "metabase/components/LoadingAndErrorWrapper";
@@ -11,6 +12,7 @@ export type Props = {
   entityType?: string,
   entityQuery?: ?{ [key: string]: any },
   reload?: boolean,
+  wrapped?: boolean,
   loadingAndErrorWrapper: boolean,
   children: (props: RenderProps) => ?React$Element<any>,
 };
@@ -33,9 +35,21 @@ export default class EntityListLoader extends React.Component {
 
   static defaultProps = {
     loadingAndErrorWrapper: true,
-    entityQuery: null,
     reload: false,
+    wrapped: false,
   };
+
+  _getWrappedList: ?(props: Props) => any;
+
+  constructor(props: Props) {
+    super(props);
+
+    this._getWrappedList = createSelector(
+      [props => props.list, props => props.dispatch, props => props.entityDef],
+      (list, dispatch, entityDef) =>
+        list && list.map(object => entityDef.wrapEntity(object, dispatch)),
+    );
+  }
 
   componentWillMount() {
     // $FlowFixMe: provided by @connect
@@ -51,11 +65,19 @@ export default class EntityListLoader extends React.Component {
 
   renderChildren = () => {
     // $FlowFixMe: provided by @connect
-    const { children, entityDef, ...props } = this.props;
+    let { children, entityDef, wrapped, list, reload, ...props } = this.props; // eslint-disable-line no-unused-vars
+
+    if (wrapped) {
+      // $FlowFixMe
+      list = this._getWrappedList(this.props);
+    }
+
+    // $FlowFixMe: loading and error missing
     return children({
       ...props,
+      list: list,
       // alias the entities name:
-      [entityDef.name]: props.list,
+      [entityDef.name]: list,
       reload: this.reload,
     });
   };
@@ -80,8 +102,12 @@ export default class EntityListLoader extends React.Component {
   };
 }
 
-export const entityListLoader = ellProps => ComposedComponent => props => (
-  <EntityListLoader {...ellProps}>
-    {childProps => <ComposedComponent {...props} {...childProps} />}
-  </EntityListLoader>
-);
+export const entityListLoader = (ellProps: Props) =>
+  // eslint-disable-line react/display-name
+  (ComposedComponent: any) =>
+    // eslint-disable-next-line react/display-name
+    (props: Props) => (
+      <EntityListLoader {...ellProps}>
+        {childProps => <ComposedComponent {...props} {...childProps} />}
+      </EntityListLoader>
+    );

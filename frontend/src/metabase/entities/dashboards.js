@@ -1,6 +1,7 @@
 /* @flow */
 
 import { createEntity } from "metabase/lib/entities";
+import * as Urls from "metabase/lib/urls";
 
 const Dashboards = createEntity({
   name: "dashboards",
@@ -14,6 +15,12 @@ const Dashboards = createEntity({
         id,
         collection_id: collection && collection.id,
       }),
+  },
+
+  objectSelectors: {
+    getName: dashboard => dashboard && dashboard.name,
+    getUrl: dashboard => dashboard && Urls.dashboard(dashboard.id),
+    getIcon: dashboard => "dashboard",
   },
 
   form: {

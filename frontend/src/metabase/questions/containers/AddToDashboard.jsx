@@ -1,6 +1,5 @@
 import React, { Component } from "react";
 import { t } from "c-3po";
-import Button from "metabase/components/Button.jsx";
 import ModalContent from "metabase/components/ModalContent.jsx";
 import Icon from "metabase/components/Icon.jsx";
 import HeaderWithBack from "metabase/components/HeaderWithBack";

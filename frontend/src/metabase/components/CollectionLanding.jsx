@@ -9,6 +9,7 @@ import * as Urls from "metabase/lib/urls";
 import { normal } from "metabase/lib/colors";
 
 import Card from "metabase/components/Card";
+import EntityItem from "metabase/components/EntityItem";
 import Icon from "metabase/components/Icon";
 import Link from "metabase/components/Link";
 import CollectionEmptyState from "metabase/components/CollectionEmptyState";
@@ -73,33 +74,6 @@ const CollectionList = () => {
         }}
       </CollectionListLoader>
     </Box>
-  );
-};
-
-const CollectionEntity = Flex.extend`
-  border-bottom: 1px solid #f8f9fa;
-  /* TODO - figure out how to use the prop instead of this? */
-  align-items: center;
-  &:hover {
-    color: ${normal.blue};
-  }
-`;
-
-const IconWrapper = Flex.extend`
-  background: #f4f5f6;
-  border-radius: 6px;
-`;
-
-const Item = ({ name, iconName, iconColor }) => {
-  return (
-    <CollectionEntity py={2} px={2}>
-      <IconWrapper p={1} mr={1} align="center" justify="center">
-        <Icon name={iconName} color={iconColor} />
-      </IconWrapper>
-      <h3>
-        <Truncate>{name}</Truncate>
-      </h3>
-    </CollectionEntity>
   );
 };
 
@@ -169,26 +143,18 @@ class DefaultLanding extends React.Component {
                   }
                 }
 
-                return (
-                  <Box>
-                    {items.map(item => {
-                      const { url, iconName, iconColor } = this._getItemProps(
-                        item,
-                      );
-                      return (
-                        <Box>
-                          <Link to={url}>
-                            <Item
-                              name={item.name}
-                              iconName={iconName}
-                              iconColor={iconColor}
-                            />
-                          </Link>
-                        </Box>
-                      );
-                    })}
-                  </Box>
-                );
+                return items.map(item => {
+                  const { url, iconName, iconColor } = this._getItemProps(item);
+                  return (
+                    <Link to={url}>
+                      <EntityItem
+                        name={item.name}
+                        iconName={iconName}
+                        iconColor={iconColor}
+                      />
+                    </Link>
+                  );
+                });
               }}
             </CollectionItemsLoader>
           </Card>

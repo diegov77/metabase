@@ -60,6 +60,7 @@ export default createEntity({
       });
     },
   },
+
   schema: new schema.Union(
     {
       questions: QuestionSchema,
@@ -67,6 +68,13 @@ export default createEntity({
       pulses: PulseSchema,
       collections: CollectionSchema,
     },
-    (input, parent, key) => `${input.type}s`,
+    (object, parent, key) => `${object.type}s`,
   ),
+
+  // delegate to the actual object's entity wrapEntity
+  wrapEntity(object, dispatch) {
+    const entities = require("metabase/entities");
+    const entity = entities[`${object.type}s`];
+    return entity.wrapEntity(object, dispatch);
+  },
 });

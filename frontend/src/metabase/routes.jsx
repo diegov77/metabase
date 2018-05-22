@@ -34,7 +34,7 @@ import {
 } from "metabase/components/BrowseApp";
 
 import QueryBuilder from "metabase/query_builder/containers/QueryBuilder.jsx";
-import Archive from "metabase/questions/containers/Archive.jsx";
+
 import CollectionEdit from "metabase/questions/containers/CollectionEdit.jsx";
 import CollectionCreate from "metabase/questions/containers/CollectionCreate.jsx";
 import CollectionPermissions from "metabase/admin/permissions/containers/CollectionsPermissionsApp.jsx";
@@ -114,6 +114,8 @@ import DashboardMoveModal from "metabase/dashboard/components/DashboardMoveModal
 import { ModalRoute } from "metabase/hoc/ModalRoute";
 
 import CollectionLanding from "metabase/components/CollectionLanding";
+
+import ArchiveApp from "metabase/home/containers/ArchiveApp.jsx";
 import SearchApp from "metabase/home/containers/SearchApp";
 
 const MetabaseIsSetup = UserAuthWrapper({
@@ -216,7 +218,7 @@ export const getRoutes = store => (
         <Route path="/explore/:databaseId" component={PostSetupApp} />
 
         <Route path="search" title={t`Search`} component={SearchApp} />
-        <Route path="archive" title={t`Archive`} component={Archive} />
+        <Route path="archive" title={t`Archive`} component={ArchiveApp} />
 
         <Route path="collection/:collectionId" component={CollectionLanding}>
           <ModalRoute path="archive" modal={ArchiveCollectionModal} />

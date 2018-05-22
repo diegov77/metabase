@@ -8,17 +8,20 @@ type Props = {
 };
 
 const CollectionListLoader = ({ children, writable, ...props }: Props) => (
-  <EntityListLoader entityType="collections" {...props}>
-    {({ list, collections, ...props }) =>
+  <EntityListLoader
+    entityType="collections"
+    {...props}
+    // $FlowFixMe: flow doesn't know about dyanmically generated "collections" prop
+    children={({ list, collections, ...props }) =>
       children({
-        list: writable ? list.filter(c => c.can_write) : list,
+        list: writable ? list && list.filter(c => c.can_write) : list,
         collections: writable
-          ? collections.filter(c => c.can_write)
+          ? collections && collections.filter(c => c.can_write)
           : collections,
         ...props,
       })
     }
-  </EntityListLoader>
+  />
 );
 
 export default CollectionListLoader;

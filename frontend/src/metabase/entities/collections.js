@@ -19,6 +19,14 @@ const Collections = createEntity({
       }),
   },
 
+  objectSelectors: {
+    getName: collection => collection && collection.name,
+    getUrl: collection =>
+      collection &&
+      (collection.id === "root" ? `/` : `/collection/${collection.id}`),
+    getIcon: collection => "collection",
+  },
+
   form: {
     fields: [
       {

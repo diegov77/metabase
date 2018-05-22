@@ -1,6 +1,9 @@
 /* @flow */
 
 import { createEntity } from "metabase/lib/entities";
+import * as Urls from "metabase/lib/urls";
+
+import visualizations from "metabase/visualizations";
 
 const Questions = createEntity({
   name: "questions",
@@ -14,6 +17,13 @@ const Questions = createEntity({
         id,
         collection_id: collection && collection.id,
       }),
+  },
+
+  objectSelectors: {
+    getName: question => question && question.name,
+    getUrl: question => question && Urls.question(question.id),
+    getIcon: question =>
+      (visualizations.get(question.display) || {}).iconName || "question",
   },
 
   form: {

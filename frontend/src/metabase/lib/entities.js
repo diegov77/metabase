@@ -9,6 +9,7 @@ import {
 import { setRequestState } from "metabase/redux/requests";
 
 import { GET, PUT, POST, DELETE } from "metabase/lib/api";
+import { singularize } from "metabase/lib/formatting";
 
 import { createSelector } from "reselect";
 import { normalize, denormalize, schema } from "normalizr";
@@ -20,25 +21,42 @@ import { getIn } from "icepick";
 // api: object containing `list`, `create`, `get`, `update`, `delete` methods (OR see `path` below)
 // path: API endpoint to create default `api` object
 // schema: normalizr schema, defaults to `new schema.Entity(entity.name)`
-// getName: property to show as the name, defaults to `name`
 //
 
 import type { APIMethod } from "metabase/lib/api";
 
 type EntityName = string;
 
+type ActionCreator = Function;
+type ObjectActionCreator = Function;
+type ObjectSelector = Function;
+
 type EntityDefinition = {
   name: EntityName,
-  path: string,
-  api?: { [method: string]: APIMethod },
+  nameSingular?: string,
   schema?: schema.Entity,
-  actions?: { [name: string]: any },
+  path?: string,
+  api?: { [method: string]: APIMethod },
+  actions?: {
+    [name: string]: ActionCreator,
+  },
+  objectActions?: {
+    [name: string]: ObjectActionCreator,
+  },
+  objectSelectors?: {
+    [name: string]: ObjectSelector,
+  },
   reducer?: Reducer,
-  objectActions?: { [name: string]: any },
+  wrapEntity?: (object: EntityObject) => any,
+  form?: any,
 };
+
+type EntityObject = any;
 
 export type Entity = {
   name: EntityName,
+  nameSingular: string,
+  path?: string,
   api: {
     list: APIMethod,
     create: APIMethod,
@@ -47,15 +65,21 @@ export type Entity = {
     delete: APIMethod,
   },
   schema: schema.Entity,
-  actions: { [name: string]: any },
+  actions: { [name: string]: ActionCreator },
   reducers: { [name: string]: Reducer },
   selectors: {
-    getList: any,
-    getObject: any,
-    getLoading: any,
-    getError: any,
+    getList: Function,
+    getObject: Function,
+    getLoading: Function,
+    getError: Function,
   },
-  getName: (object: any) => string,
+  objectActions: {
+    [name: string]: ObjectActionCreator,
+  },
+  objectSelectors: {
+    [name: string]: ObjectSelector,
+  },
+  wrapEntity: (object: EntityObject) => any,
   form?: any,
 };
 
@@ -65,49 +89,45 @@ export function createEntity(def: EntityDefinition): Entity {
   // $FlowFixMe
   const entity: Entity = { ...def };
 
+  if (!entity.nameSingular) {
+    entity.nameSingular = singularize(entity.name);
+  }
+
   // defaults
   if (!entity.schema) {
     entity.schema = new schema.Entity(entity.name);
   }
-  if (!entity.getName) {
-    entity.getName = object => object.name;
-  }
 
   // API
-  entity.api = {
-    ...(entity.path
-      ? {
-          list: GET(`${entity.path}`),
-          create: POST(`${entity.path}`),
-          get: GET(`${entity.path}/:id`),
-          update: PUT(`${entity.path}/:id`),
-          delete: DELETE(`${entity.path}/:id`),
-        }
-      : {}),
-    ...entity.api,
-  };
-
-  function idForQuery(entityQuery) {
-    return JSON.stringify(entityQuery || null);
+  if (!entity.api) {
+    entity.api = {};
+  }
+  if (entity.path) {
+    const path = entity.path; // Flow not recognizing path won't be undefined
+    entity.api = {
+      list: GET(`${path}`),
+      create: POST(`${path}`),
+      get: GET(`${path}/:id`),
+      update: PUT(`${path}/:id`),
+      delete: DELETE(`${path}/:id`),
+      ...entity.api,
+    };
   }
 
-  // ACITON TYPES
+  const getIdForQuery = entityQuery => JSON.stringify(entityQuery || null);
+
+  const getObjectStatePath = entityId => ["entities", entity.name, entityId];
+  const getListStatePath = entityQuery =>
+    ["entities", entity.name + "_list"].concat(getIdForQuery(entityQuery));
+
+  // ACTION TYPES
   const CREATE_ACTION = `metabase/entities/${entity.name}/CREATE`;
   const FETCH_ACTION = `metabase/entities/${entity.name}/FETCH`;
   const UPDATE_ACTION = `metabase/entities/${entity.name}/UPDATE`;
   const DELETE_ACTION = `metabase/entities/${entity.name}/DELETE`;
   const FETCH_LIST_ACTION = `metabase/entities/${entity.name}/FETCH_LIST`;
 
-  const getObjectStatePath = entityId => ["entities", entity.name, entityId];
-
-  const getListStatePath = entityQuery =>
-    ["entities", entity.name + "_list"].concat(idForQuery(entityQuery));
-
-  // ACTION CREATORS
-  entity.actions = {
-    ...(def.actions || {}),
-    ...(def.objectActions || {}),
-
+  entity.objectActions = {
     create: createThunkAction(
       CREATE_ACTION,
       entityObject => async (dispatch, getState) => {
@@ -147,7 +167,14 @@ export function createEntity(def: EntityDefinition): Entity {
 
     update: createThunkAction(
       UPDATE_ACTION,
-      entityObject => async (dispatch, getState) => {
+      (entityObject, updatedObject = null) => async (dispatch, getState) => {
+        // If a second object is provided just take the id from the first and
+        // update it with all the properties in the second
+        // NOTE: this is so that the object.update(updatedObject) method on
+        // the default entity wrapper class works correctly
+        if (updatedObject) {
+          entityObject = { id: entityObject.id, ...updatedObject };
+        }
         const statePath = [...getObjectStatePath(entityObject.id), "update"];
         try {
           dispatch(setRequestState({ statePath, state: "LOADING" }));
@@ -185,6 +212,12 @@ export function createEntity(def: EntityDefinition): Entity {
       },
     ),
 
+    // user defined object actions should override defaults
+    ...(def.objectActions || {}),
+  };
+
+  // ACTION CREATORS
+  entity.actions = {
     fetchList: createThunkAction(
       FETCH_LIST_ACTION,
       (entityQuery = null, reload = false) => (dispatch, getState) =>
@@ -203,6 +236,10 @@ export function createEntity(def: EntityDefinition): Entity {
           },
         }),
     ),
+
+    // user defined actions should override defaults
+    ...entity.objectActions,
+    ...(def.actions || {}),
   };
 
   // SELECTORS
@@ -222,7 +259,7 @@ export function createEntity(def: EntityDefinition): Entity {
   // LIST SELECTORS
 
   const getEntityQueryId = (state, props) =>
-    idForQuery(props && props.entityQuery);
+    getIdForQuery(props && props.entityQuery);
 
   const getEntityLists = createSelector(
     [getEntities],
@@ -264,6 +301,19 @@ export function createEntity(def: EntityDefinition): Entity {
     getError,
   };
 
+  entity.objectSelectors = {
+    getName(object) {
+      return object.name;
+    },
+    getIcon(object) {
+      return "unknown";
+    },
+    getColor(object) {
+      return undefined;
+    },
+    ...(def.objectSelectors || {}),
+  };
+
   // REDUCERS
 
   entity.reducers = {};
@@ -285,7 +335,7 @@ export function createEntity(def: EntityDefinition): Entity {
       if (payload.result) {
         return {
           ...state,
-          [idForQuery(payload.entityQuery)]: payload.result,
+          [getIdForQuery(payload.entityQuery)]: payload.result,
         };
       }
       // NOTE: only add/remove from the "default" list (no entityQuery)
@@ -300,6 +350,52 @@ export function createEntity(def: EntityDefinition): Entity {
     }
     return state;
   };
+
+  // OBJECT WRAPPER
+
+  if (!entity.wrapEntity) {
+    // This is the default entity wrapper class implementation
+    //
+    // We automatically bind all objectSelectors and objectActions functions
+    //
+    // If a dispatch function is passed to the constructor the actions will be
+    // dispatched using it, otherwise the actions will be returned
+    //
+    class EntityWrapper {
+      _dispatch: ?(action: any) => any;
+
+      constructor(object, dispatch = null) {
+        Object.assign(this, object);
+        this._dispatch = dispatch;
+      }
+    }
+    // object selectors
+    for (const [methodName, method] of Object.entries(entity.objectSelectors)) {
+      // $FlowFixMe
+      EntityWrapper.prototype[methodName] = function(...args) {
+        // $FlowFixMe
+        return method(this, ...args);
+      };
+    }
+    // object actions
+    for (const [methodName, method] of Object.entries(entity.objectActions)) {
+      // $FlowFixMe
+      EntityWrapper.prototype[methodName] = function(...args) {
+        if (this._dispatch) {
+          // if dispatch was provided to the constructor go ahead and dispatch
+          // $FlowFixMe
+          return this._dispatch(method(this, ...args));
+        } else {
+          // otherwise just return the action
+          // $FlowFixMe
+          return method(this, ...args);
+        }
+      };
+    }
+
+    entity.wrapEntity = (object, dispatch) =>
+      new EntityWrapper(object, dispatch);
+  }
 
   return entity;
 }
