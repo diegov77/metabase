@@ -150,11 +150,15 @@ export function createEntity(def: EntityDefinition): Entity {
 
     fetch: createThunkAction(
       FETCH_ACTION,
-      (entityObject, reload = false) => (dispatch, getState) =>
+      (entityObject, { reload = false, properties = null } = {}) => (
+        dispatch,
+        getState,
+      ) =>
         fetchData({
           dispatch,
           getState,
           reload,
+          properties,
           requestStatePath: getObjectStatePath(entityObject.id),
           existingStatePath: getObjectStatePath(entityObject.id),
           getData: async () =>
@@ -220,7 +224,7 @@ export function createEntity(def: EntityDefinition): Entity {
   entity.actions = {
     fetchList: createThunkAction(
       FETCH_LIST_ACTION,
-      (entityQuery = null, reload = false) => (dispatch, getState) =>
+      (entityQuery = null, { reload = false } = {}) => (dispatch, getState) =>
         fetchData({
           dispatch,
           getState,

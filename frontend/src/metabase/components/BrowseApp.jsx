@@ -3,6 +3,7 @@ import { Box, Flex, Subhead, Text } from "rebass";
 import { t } from "c-3po";
 
 import EntityListLoader from "metabase/entities/containers/EntityListLoader";
+import EntityObjectLoader from "metabase/entities/containers/EntityObjectLoader";
 
 import { normal } from "metabase/lib/colors";
 import Question from "metabase-lib/lib/Question";
@@ -28,6 +29,17 @@ const TableListLoader = ({ dbId, schemaName, ...props }) => (
   />
 );
 
+const DatabaseName = ({ dbId }) => (
+  <EntityObjectLoader
+    entityType="databases"
+    entityId={dbId}
+    properties={["name"]}
+    loadingAndErrorWrapper={false}
+  >
+    {({ object }) => (object ? <span>{object.name}</span> : null)}
+  </EntityObjectLoader>
+);
+
 const BrowseHeader = ({ children }) => (
   <Box my={3}>
     <Subhead>{children}</Subhead>
@@ -46,7 +58,7 @@ export class SchemaBrowser extends React.Component {
                 <BrowserCrumbs
                   crumbs={[
                     { title: t`Your data`, to: "browse" },
-                    { title: `database ${dbId} (FIXME)` },
+                    { title: <DatabaseName dbId={dbId} /> },
                   ]}
                 />
                 {schemas.map(schema => (
@@ -87,7 +99,10 @@ export class TableBrowser extends React.Component {
                 <BrowserCrumbs
                   crumbs={[
                     { title: t`Your data`, to: "browse" },
-                    { title: `database ${dbId} (FIXME)`, to: `browse/${dbId}` },
+                    {
+                      title: <DatabaseName dbId={dbId} />,
+                      to: `browse/${dbId}`,
+                    },
                     schemaName != null && { title: schemaName },
                   ]}
                 />

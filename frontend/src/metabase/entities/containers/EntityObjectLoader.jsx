@@ -8,10 +8,21 @@ import entityType from "./EntityType";
 import LoadingAndErrorWrapper from "metabase/components/LoadingAndErrorWrapper";
 
 export type Props = {
-  entityType?: string,
+  // Entity ID, such as a database ID
+  entityId: any,
+  // Entity type name (e.x. "databases", "questions", etc)
+  entityType: string,
+  // Reload the object when the component is mounted (or entityId changes)
   reload?: boolean,
+  // Wrap the object in the a class that contains helper functions
   wrapped?: boolean,
+  // List of required properties, if the object is loaded and they are all
+  // present don't bother loading as the object has been loaded by some other means
+  properties?: string[],
+  // Wrap the children in LoadingAndErrorWrapper to display loading and error states
+  // When true (default) the children render prop won't be called until loaded
   loadingAndErrorWrapper: boolean,
+  // Children render prop
   children: (props: RenderProps) => ?React$Element<any>,
 };
 
@@ -56,12 +67,18 @@ export default class EntitiesObjectLoader extends React.Component {
   componentWillMount() {
     // $FlowFixMe: provided by @connect
     const { entityId, fetch } = this.props;
-    fetch({ id: entityId }, this.props.reload);
+    fetch(
+      { id: entityId },
+      { reload: this.props.reload, properties: this.props.properties },
+    );
   }
   componentWillReceiveProps(nextProps: Props) {
-    // $FlowFixMe: provided by @connect
     if (nextProps.entityId !== this.props.entityId) {
-      nextProps.fetch({ id: nextProps.entityId });
+      // $FlowFixMe: provided by @connect
+      nextProps.fetch(
+        { id: nextProps.entityId },
+        { reload: nextProps.reload, properties: nextProps.properties },
+      );
     }
   }
   renderChildren = () => {
@@ -99,7 +116,10 @@ export default class EntitiesObjectLoader extends React.Component {
 
   reload = () => {
     // $FlowFixMe: provided by @connect
-    return this.props.fetch({ id: this.props.entityId }, true);
+    return this.props.fetch(
+      { id: this.props.entityId },
+      { reload: true, properties: this.props.properties },
+    );
   };
 
   remove = () => {

@@ -20,7 +20,7 @@ const deprecated = message => console.warn("DEPRECATED: " + message);
 export const FETCH_METRICS = metrics.actions.fetchList.toString();
 export const fetchMetrics = (reload = false) => {
   deprecated("metabase/redux/metadata fetchMetrics");
-  return metrics.actions.fetchList(null, reload);
+  return metrics.actions.fetchList(null, { reload });
 };
 
 export const updateMetric = metric => {
@@ -64,7 +64,7 @@ export const updateMetricImportantFields = createThunkAction(
 export const FETCH_SEGMENTS = segments.actions.fetchList.toString();
 export const fetchSegments = (reload = false) => {
   deprecated("metabase/redux/metadata fetchSegments");
-  return segments.actions.fetchList(null, reload);
+  return segments.actions.fetchList(null, { reload });
 };
 
 export const updateSegment = segment => {
@@ -80,7 +80,7 @@ export const fetchDatabases = (reload = false) => {
       include_tables: true,
       include_cards: true,
     },
-    reload,
+    { reload },
   );
 };
 
@@ -92,7 +92,7 @@ export const fetchRealDatabases = (reload = false) => {
       include_tables: true,
       include_cards: false,
     },
-    reload,
+    { reload },
   );
 };
 
@@ -124,7 +124,7 @@ export const updateTable = table => {
 
 export const fetchTables = (reload = false) => {
   deprecated("metabase/redux/metadata fetchTables");
-  return tables.actions.fetchList(null, reload);
+  return tables.actions.fetchList(null, { reload });
 };
 
 export { FETCH_TABLE_METADATA } from "metabase/entities/tables";
@@ -135,7 +135,7 @@ export const fetchTableMetadata = (tableId, reload = false) => {
 
 export const fetchField = (id, reload = false) => {
   deprecated("metabase/redux/metadata fetchField");
-  return fields.actions.fetch({ id }, reload);
+  return fields.actions.fetch({ id }, { reload });
 };
 
 export const FETCH_FIELD_VALUES = fields.actions.fetchFieldValues.toString();

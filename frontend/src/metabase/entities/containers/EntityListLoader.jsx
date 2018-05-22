@@ -53,13 +53,13 @@ export default class EntityListLoader extends React.Component {
 
   componentWillMount() {
     // $FlowFixMe: provided by @connect
-    this.props.fetchList(this.props.entityQuery, this.props.reload);
+    this.props.fetchList(this.props.entityQuery, { reload: this.props.reload });
   }
 
   componentWillReceiveProps(nextProps: Props) {
     if (!_.isEqual(nextProps.entityQuery, this.props.entityQuery)) {
       // $FlowFixMe: provided by @connect
-      nextProps.fetchList(nextProps.entityQuery, nextProps.reload);
+      nextProps.fetchList(nextProps.entityQuery, { reload: nextProps.reload });
     }
   }
 
@@ -98,7 +98,7 @@ export default class EntityListLoader extends React.Component {
 
   reload = () => {
     // $FlowFixMe: provided by @connect
-    return this.props.fetchList(this.props.entityQuery, true);
+    return this.props.fetchList(this.props.entityQuery, { reload: true });
   };
 }
 
